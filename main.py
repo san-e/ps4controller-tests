@@ -10,6 +10,8 @@ class MyController(Controller, Thread):
         Thread.__init__(self)
         self.r2 = 0  # in percent
         self.l2 = 0  # in percent
+        self.r3 = 0
+        self.l3 = 0
 
     def run(self):
         self.listen()
@@ -93,18 +95,19 @@ class MyController(Controller, Thread):
         pass
 
     def on_L3_left(self, value):
-        pass
+        value += 32767
+        self.l3 = ((value / (32767 * 2) * 100) * 2) - 100
 
     def on_L3_right(self, value):
-        pass
+        value += 32767
+        self.l3 = ((value / (32767 * 2) * 100) * 2) - 100
 
     def on_L3_y_at_rest(self):
         """L3 joystick is at rest after the joystick was moved and let go off"""
         pass
 
     def on_L3_x_at_rest(self):
-        """L3 joystick is at rest after the joystick was moved and let go off"""
-        pass
+        self.l3 = 0
 
     def on_L3_press(self):
         """L3 joystick is clicked. This event is only detected when connecting without ds4drv"""
@@ -168,16 +171,13 @@ class MyController(Controller, Thread):
 controller = MyController(interface="/dev/input/js0", connecting_using_ds4drv=False)
 controller.start()
 
-tickspeed = 0.1
+tickspeed = 0.01
 deceleration = 70 * tickspeed  # prozent pro sekunde
 acceleration = 0
 while True:
-    if not controller.r2 == 0 and acceleration >= 0:
-        acceleration = controller.r2 - controller.l2
-    else:
-        if acceleration - deceleration > 0:
-            acceleration -= deceleration
-        else:
-            acceleration = 0
-    print(f"{int(acceleration)}                                     ", end="\r")
+    acceleration = controller.r2 - controller.l2
+    print(
+        f"Acceleration: {int(acceleration)}%  Steering: {int(controller.l3)}%  ",
+        end="\r",
+    )
     time.sleep(tickspeed)
